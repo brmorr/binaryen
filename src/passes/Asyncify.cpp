@@ -1107,6 +1107,10 @@ private:
 
 } // anonymous namespace
 
+static std::string getFullImportName(Name module, Name base) {
+  return std::string(module.str) + '.' + base.str;
+}
+
 struct Asyncify : public Pass {
   void run(PassRunner* runner, Module* module) override {
     bool optimize = runner->options.optimizeLevel > 0;
@@ -1169,7 +1173,7 @@ struct Asyncify : public Pass {
       if (allImportsCanChangeState) {
         return true;
       }
-      std::string full = std::string(module.str) + '.' + base.str;
+      auto full = getFullImportName(module, base);
       for (auto& listedImport : listedImports) {
         if (String::wildcardMatch(listedImport, full)) {
           return true;
@@ -1300,5 +1304,79 @@ private:
 };
 
 Pass* createAsyncifyPass() { return new Asyncify(); }
+
+// Helper passes that can be run after Asyncify.
+
+struct PostAsyncify : public Pass {
+  bool isFunctionParallel() override { return true; }
+
+  struct Info {
+    Name asyncifyState;
+    const std::set<Name>& alwaysUnwindingImports;
+    bool neverRewind;
+    bool neverUnwind;
+  };
+
+  Info& info;
+
+  PostAsyncify* create() override { return new PostAsyncify(info); }
+
+  PostAsyncify(Info& info) : info(info) {}
+
+  void visitCall(Call* curr) {
+    auto* target = getModule()->getFunction(curr->target);
+    if (target->imported()) {
+      Name full = getFullImportName(target->module, target->base);
+      if (info.alwaysUnwindingImports.count(full)) {
+        // Add a set of the global to "unwinding" right after the call
+        // Add helper to insert stuff in between a call and the next line etc., use it above too.
+      }
+    }
+  }
+
+  void visitFunction(Function* curr) {
+    if (info.neverRewind) {
+      Builder builder(*getModule());
+      curr->body = builder.makeSequence(
+        builder.makeGlobalSet(
+          ASYNCIFY_STATE,
+          builder.makeConst(Literal(int32_t(State::Normal)))
+        ),
+        curr->body
+      );
+    }
+  }
+};
+
+//
+// Given a list of imports that are known to *always* unwind, modify the code
+// to take advantage of that assumption.
+//
+struct PostAsyncifyAlwaysUnwind : public Pass {
+  void run(PassRunner* runner, Module* module) override {
+  }
+};
+
+Pass* createPostAsyncifyAlwaysUnwindPass() { return new Asyncify(); }
+
+//
+// Modify the code to assume that we *never* rewind.
+//
+struct PostAsyncifyNeverRewind : public Pass {
+  void run(PassRunner* runner, Module* module) override {
+  }
+};
+
+Pass* createPostAsyncifyNeverRewindPass() { return new Asyncify(); }
+
+//
+// Modify the code to assume that we *never* unwind.
+//
+struct PostAsyncifyNeverUnwind : public Pass {
+  void run(PassRunner* runner, Module* module) override {
+  }
+};
+
+Pass* createPostAsyncifyNeverUnwindPass() { return new Asyncify(); }
 
 } // namespace wasm
