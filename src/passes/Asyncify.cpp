@@ -1368,6 +1368,20 @@ struct PostAsyncify
     this->replaceCurrent(builder.makeConst(Literal(int32_t(value))));
   }
 
+  void visitSelect(Select* curr) {
+    auto* get = curr->condition->dynCast<GlobalGet>();
+    if (!get || get->name != asyncifyStateName) {
+      return;
+    }
+    // This is a comparison of the state to zero, which means we are checking
+    // "if running normally, run this code, but if rewinding, ignore it". If
+    // we know we'll never rewind, we can optimize this.
+    if (neverRewind) {
+      Builder builder(*this->getModule());
+      curr->condition = builder.makeConst(Literal(int32_t(0)));
+    }
+  }
+
   void visitCall(Call* curr) {
     unsetUnwinding();
     if (!importsAlwaysUnwind) {
