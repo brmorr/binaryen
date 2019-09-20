@@ -1308,13 +1308,15 @@ Pass* createAsyncifyPass() { return new Asyncify(); }
 
 // Helper passes that can be run after Asyncify.
 
-template<bool neverRewind,
-         bool neverUnwind,
-         bool importsAlwaysUnwind>
-struct PostAsyncify : public WalkerPass<PostWalker<PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>>> {
+template<bool neverRewind, bool neverUnwind, bool importsAlwaysUnwind>
+struct PostAsyncify
+  : public WalkerPass<
+      PostWalker<PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>>> {
   bool isFunctionParallel() override { return true; }
 
-  PostAsyncify* create() override { return new PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>(); }
+  PostAsyncify* create() override {
+    return new PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>();
+  }
 
   void doWalkFunction(Function* func) {
     // Find the asyncify state name.
@@ -1328,8 +1330,8 @@ struct PostAsyncify : public WalkerPass<PostWalker<PostAsyncify<neverRewind, nev
   }
 
   void visitBinary(Binary* curr) {
-    // Check if this is a comparison of the asyncify state to a specific constant,
-    // which we may know is impossible.
+    // Check if this is a comparison of the asyncify state to a specific
+    // constant, which we may know is impossible.
     bool flip = false;
     if (curr->op == NeInt32) {
       flip = true;
@@ -1337,13 +1339,18 @@ struct PostAsyncify : public WalkerPass<PostWalker<PostAsyncify<neverRewind, nev
       return;
     }
     auto* c = curr->right->dynCast<Const>();
-    if (!c) return;
+    if (!c) {
+      return;
+    }
     auto* get = curr->left->dynCast<GlobalGet>();
-    if (!get || get->name != asyncifyStateName) return;
-    // This is a comparison of the state to a constant, check if we know the value.
+    if (!get || get->name != asyncifyStateName) {
+      return;
+    }
+    // This is a comparison of the state to a constant, check if we know the
+    // value.
     auto checkedValue = c->value.geti32();
     if (!((checkedValue == int(State::Unwinding) && neverUnwind) ||
-         (checkedValue == int(State::Rewinding) && neverRewind))) {
+          (checkedValue == int(State::Rewinding) && neverRewind))) {
       return;
     }
     // We know the state checked cannot happen.
@@ -1351,37 +1358,42 @@ struct PostAsyncify : public WalkerPass<PostWalker<PostAsyncify<neverRewind, nev
     this->replaceCurrent(builder.makeConst(Literal(int32_t(flip ? 1 : 0))));
   }
 
-/*
-  void visitCall(Call* curr) {
-    auto* target = getModule()->getFunction(curr->target);
-    if (target->imported()) {
-      Name full = getFullImportName(target->module, target->base);
-      if (info.alwaysUnwindingImports.count(full)) {
-        // Add a set of the global to "unwinding" right after the call
-        // Add helper to insert stuff in between a call and the next line etc., use it above too.
+  /*
+    void visitCall(Call* curr) {
+      auto* target = getModule()->getFunction(curr->target);
+      if (target->imported()) {
+        Name full = getFullImportName(target->module, target->base);
+        if (info.alwaysUnwindingImports.count(full)) {
+          // Add a set of the global to "unwinding" right after the call
+          // Add helper to insert stuff in between a call and the next line
+    etc., use it above too.
+        }
       }
     }
-  }
-*/
+  */
 
 private:
   Name asyncifyStateName;
 };
 
 //
-// Assume imports that may unwind will always unwind, and that rewinding never happens.
+// Assume imports that may unwind will always unwind, and that rewinding never
+// happens.
 //
 
-Pass* createPostAsyncifyAlwaysOnlyUnwindPass() { return new PostAsyncify<true, false, true>(); }
+Pass* createPostAsyncifyAlwaysOnlyUnwindPass() {
+  return new PostAsyncify<true, false, true>();
+}
 
 //
 // Assume that we never unwind, but may still rewind.
 //
 struct PostAsyncifyNeverUnwind : public Pass {
-  void run(PassRunner* runner, Module* module) override {
-  }
+  void run(PassRunner* runner, Module* module) override {}
 };
 
-Pass* createPostAsyncifyNeverUnwindPass() { return new PostAsyncify<false, true, false>(); }
+Pass* createPostAsyncifyNeverUnwindPass() {
+  return new PostAsyncify<false, true, false>();
+}
 
 } // namespace wasm
