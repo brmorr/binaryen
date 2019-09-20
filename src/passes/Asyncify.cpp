@@ -1310,8 +1310,8 @@ Pass* createAsyncifyPass() { return new Asyncify(); }
 
 template<bool neverRewind, bool neverUnwind, bool importsAlwaysUnwind>
 struct PostAsyncify
-  : public WalkerPass<
-      LinearExecutionWalker<PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>>> {
+  : public WalkerPass<LinearExecutionWalker<
+      PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>>> {
   bool isFunctionParallel() override { return true; }
 
   PostAsyncify* create() override {
@@ -1383,11 +1383,11 @@ struct PostAsyncify
     this->unwinding = true;
   }
 
-  void visitCallIndirect(CallIndirect* curr) {
-    unsetUnwinding();
-  }
+  void visitCallIndirect(CallIndirect* curr) { unsetUnwinding(); }
 
-  static void doNoteNonLinear(PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>* self, Expression** currp) {
+  static void doNoteNonLinear(
+    PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>* self,
+    Expression** currp) {
     // When control flow branches, stop tracking an unwinding.
     self->unsetUnwinding();
   }
@@ -1403,9 +1403,7 @@ private:
   // Whether we just did a call to an import that indicates we are unwinding.
   bool unwinding = false;
 
-  void unsetUnwinding() {
-    this->unwinding = false;
-  }
+  void unsetUnwinding() { this->unwinding = false; }
 };
 
 //
