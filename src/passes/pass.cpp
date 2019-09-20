@@ -204,8 +204,8 @@ void PassRegistry::registerPasses() {
                "apply the assumption that asyncify imports always unwind, "
                "and we never rewind",
                createPostAsyncifyAlwaysOnlyUnwindPass);
-  registerPass("post-asyncify-never-rewind",
-               "apply the assumption that asyncify never rewinds",
+  registerPass("post-asyncify-never-unwind",
+               "apply the assumption that asyncify never unwinds",
                createPostAsyncifyNeverUnwindPass);
   registerPass("post-emscripten",
                "miscellaneous optimizations for Emscripten-generated code",
