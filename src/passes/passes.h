@@ -69,6 +69,8 @@ Pass* createOptimizeAddedConstantsPropagatePass();
 Pass* createOptimizeInstructionsPass();
 Pass* createOptimizeStackIRPass();
 Pass* createPickLoadSignsPass();
+Pass* createPostAsyncifyAlwaysOnlyUnwindPass();
+Pass* createPostAsyncifyNeverUnwindPass();
 Pass* createPostEmscriptenPass();
 Pass* createPrecomputePass();
 Pass* createPrecomputePropagatePass();

@@ -200,6 +200,13 @@ void PassRegistry::registerPasses() {
   registerPass("pick-load-signs",
                "pick load signs based on their uses",
                createPickLoadSignsPass);
+  registerPass("post-asyncify-always-and-only-unwind",
+               "apply the assumption that asyncify imports always unwind, "
+               "and we never rewind",
+               createPostAsyncifyAlwaysOnlyUnwindPass);
+  registerPass("post-asyncify-never-rewind",
+               "apply the assumption that asyncify never rewinds",
+               createPostAsyncifyNeverUnwindPass);
   registerPass("post-emscripten",
                "miscellaneous optimizations for Emscripten-generated code",
                createPostEmscriptenPass);
