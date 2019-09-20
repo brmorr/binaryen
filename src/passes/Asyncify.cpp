@@ -1311,19 +1311,20 @@ Pass* createAsyncifyPass() { return new Asyncify(); }
 template<bool neverRewind,
          bool neverUnwind,
          bool importsAlwaysUnwind>
-struct PostAsyncify : public Pass {
+struct PostAsyncify : public WalkerPass<PostWalker<PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>>> {
   bool isFunctionParallel() override { return true; }
 
   PostAsyncify* create() override { return new PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>(); }
 
   void doWalkFunction(Function* func) {
     // Find the asyncify state name.
-    auto* unwind = getModule()->getExport(ASYNCIFY_STOP_UNWIND);
-    FindAll<GlobalSet> sets(func->body);
+    auto* unwind = this->getModule()->getExport(ASYNCIFY_STOP_UNWIND);
+    auto* unwindFunc = this->getModule()->getFunction(unwind->value);
+    FindAll<GlobalSet> sets(unwindFunc->body);
     assert(sets.list.size() == 1);
     asyncifyStateName = sets.list[0]->name;
     // Walk and optimize.
-    walk(func->body);
+    this->walk(func->body);
   }
 
   void visitBinary(Binary* curr) {
@@ -1341,12 +1342,13 @@ struct PostAsyncify : public Pass {
     if (!get || get->name != asyncifyStateName) return;
     // This is a comparison of the state to a constant, check if we know the value.
     auto checkedValue = c->value.geti32();
-    if (!((checkedValue == State::Unwinding && neverUnwind) ||
-         (checkedValue == State::Rewinding && neverRewind))) {
+    if (!((checkedValue == int(State::Unwinding) && neverUnwind) ||
+         (checkedValue == int(State::Rewinding) && neverRewind))) {
       return;
     }
     // We know the state checked cannot happen.
-    replaceCurrent(builder.makeConst(Literal(int32_t(flip ? 1 : 0))));
+    Builder builder(*this->getModule());
+    this->replaceCurrent(builder.makeConst(Literal(int32_t(flip ? 1 : 0))));
   }
 
 /*
