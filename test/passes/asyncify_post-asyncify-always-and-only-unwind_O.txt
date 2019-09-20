@@ -18,17 +18,10 @@
    (block $__asyncify_unwind (result i32)
     (block
      (call $import)
-     (drop
-      (br_if $__asyncify_unwind
-       (i32.const 0)
-       (i32.eq
-        (global.get $__asyncify_state)
-        (i32.const 1)
-       )
-      )
+     (br $__asyncify_unwind
+      (i32.const 0)
      )
     )
-    (return)
    )
   )
   (i32.store

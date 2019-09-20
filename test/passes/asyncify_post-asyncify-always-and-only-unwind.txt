@@ -60,10 +60,7 @@
         (block
          (call $import)
          (if
-          (i32.eq
-           (global.get $__asyncify_state)
-           (i32.const 1)
-          )
+          (i32.const 1)
           (br $__asyncify_unwind
            (i32.const 0)
           )
@@ -200,10 +197,7 @@
           (call $import2)
          )
          (if
-          (i32.eq
-           (global.get $__asyncify_state)
-           (i32.const 1)
-          )
+          (i32.const 1)
           (br $__asyncify_unwind
            (i32.const 0)
           )
@@ -370,10 +364,7 @@
           (call $import2)
          )
          (if
-          (i32.eq
-           (global.get $__asyncify_state)
-           (i32.const 1)
-          )
+          (i32.const 1)
           (br $__asyncify_unwind
            (i32.const 0)
           )

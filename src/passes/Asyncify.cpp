@@ -1311,7 +1311,7 @@ Pass* createAsyncifyPass() { return new Asyncify(); }
 template<bool neverRewind, bool neverUnwind, bool importsAlwaysUnwind>
 struct PostAsyncify
   : public WalkerPass<
-      PostWalker<PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>>> {
+      LinearExecutionWalker<PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>>> {
   bool isFunctionParallel() override { return true; }
 
   PostAsyncify* create() override {
@@ -1348,32 +1348,64 @@ struct PostAsyncify
     }
     // This is a comparison of the state to a constant, check if we know the
     // value.
+    int32_t value;
     auto checkedValue = c->value.geti32();
-    if (!((checkedValue == int(State::Unwinding) && neverUnwind) ||
-          (checkedValue == int(State::Rewinding) && neverRewind))) {
+    if ((checkedValue == int(State::Unwinding) && neverUnwind) ||
+        (checkedValue == int(State::Rewinding) && neverRewind)) {
+      // We know the state is checked against an impossible value.
+      value = 0;
+    } else if (checkedValue == int(State::Unwinding) && this->unwinding) {
+      // We know we are in fact unwinding right now.
+      value = 1;
+      unsetUnwinding();
+    } else {
       return;
     }
-    // We know the state checked cannot happen.
+    if (flip) {
+      value = 1 - value;
+    }
     Builder builder(*this->getModule());
-    this->replaceCurrent(builder.makeConst(Literal(int32_t(flip ? 1 : 0))));
+    this->replaceCurrent(builder.makeConst(Literal(int32_t(value))));
   }
 
-  /*
-    void visitCall(Call* curr) {
-      auto* target = getModule()->getFunction(curr->target);
-      if (target->imported()) {
-        Name full = getFullImportName(target->module, target->base);
-        if (info.alwaysUnwindingImports.count(full)) {
-          // Add a set of the global to "unwinding" right after the call
-          // Add helper to insert stuff in between a call and the next line
-    etc., use it above too.
-        }
-      }
+  void visitCall(Call* curr) {
+    unsetUnwinding();
+    if (!importsAlwaysUnwind) {
+      return;
     }
-  */
+    auto* target = this->getModule()->getFunction(curr->target);
+    if (!target->imported()) {
+      return;
+    }
+    // This is an import that definitely unwinds. Await the next check of
+    // the state in this linear execution trace, which we can turn into a
+    // constant.
+    this->unwinding = true;
+  }
+
+  void visitCallIndirect(CallIndirect* curr) {
+    unsetUnwinding();
+  }
+
+  static void doNoteNonLinear(PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>* self, Expression** currp) {
+    // When control flow branches, stop tracking an unwinding.
+    self->unsetUnwinding();
+  }
+
+  void visitGlobalSet(GlobalSet* set) {
+    // TODO: this could be more precise
+    unsetUnwinding();
+  }
 
 private:
   Name asyncifyStateName;
+
+  // Whether we just did a call to an import that indicates we are unwinding.
+  bool unwinding = false;
+
+  void unsetUnwinding() {
+    this->unwinding = false;
+  }
 };
 
 //
