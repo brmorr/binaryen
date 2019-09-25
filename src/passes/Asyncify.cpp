@@ -1441,7 +1441,7 @@ struct PostAsyncify
 
   static void doNoteNonLinear(
     PostAsyncify<neverRewind, neverUnwind, importsAlwaysUnwind>* self,
-    Expression** currp) {
+    Expression**) {
     // When control flow branches, stop tracking an unwinding.
     self->unsetUnwinding();
   }
