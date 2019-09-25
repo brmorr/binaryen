@@ -782,6 +782,7 @@ enum ASTNodes {
   V128And = 0x4d,
   V128Or = 0x4e,
   V128Xor = 0x4f,
+  V128AndNot = 0xd8,
   V128Bitselect = 0x50,
   I8x16Neg = 0x51,
   I8x16AnyTrue = 0x52,
@@ -856,6 +857,10 @@ enum ASTNodes {
   F32x4ConvertUI32x4 = 0xb0,
   F64x2ConvertSI64x2 = 0xb1,
   F64x2ConvertUI64x2 = 0xb2,
+  V8x16LoadSplat = 0xc2,
+  V16x8LoadSplat = 0xc3,
+  V32x4LoadSplat = 0xc4,
+  V64x2LoadSplat = 0xc5,
   I8x16NarrowSI16x8 = 0xc6,
   I8x16NarrowUI16x8 = 0xc7,
   I16x8NarrowSI32x4 = 0xc8,
@@ -868,6 +873,12 @@ enum ASTNodes {
   I32x4WidenHighSI16x8 = 0xcf,
   I32x4WidenLowUI16x8 = 0xd0,
   I32x4WidenHighUI16x8 = 0xd1,
+  I16x8LoadExtSVec8x8 = 0xd2,
+  I16x8LoadExtUVec8x8 = 0xd3,
+  I32x4LoadExtSVec16x4 = 0xd4,
+  I32x4LoadExtUVec16x4 = 0xd5,
+  I64x2LoadExtSVec32x2 = 0xd6,
+  I64x2LoadExtUVec32x2 = 0xd7,
 
   // bulk memory opcodes
 
@@ -1257,13 +1268,13 @@ public:
   bool maybeVisitSIMDBinary(Expression*& out, uint32_t code);
   bool maybeVisitSIMDUnary(Expression*& out, uint32_t code);
   bool maybeVisitSIMDConst(Expression*& out, uint32_t code);
-  bool maybeVisitSIMDLoad(Expression*& out, uint32_t code);
   bool maybeVisitSIMDStore(Expression*& out, uint32_t code);
   bool maybeVisitSIMDExtract(Expression*& out, uint32_t code);
   bool maybeVisitSIMDReplace(Expression*& out, uint32_t code);
   bool maybeVisitSIMDShuffle(Expression*& out, uint32_t code);
   bool maybeVisitSIMDTernary(Expression*& out, uint32_t code);
   bool maybeVisitSIMDShift(Expression*& out, uint32_t code);
+  bool maybeVisitSIMDLoad(Expression*& out, uint32_t code);
   bool maybeVisitMemoryInit(Expression*& out, uint32_t code);
   bool maybeVisitDataDrop(Expression*& out, uint32_t code);
   bool maybeVisitMemoryCopy(Expression*& out, uint32_t code);

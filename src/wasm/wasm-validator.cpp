@@ -276,6 +276,7 @@ public:
   void visitSIMDShuffle(SIMDShuffle* curr);
   void visitSIMDTernary(SIMDTernary* curr);
   void visitSIMDShift(SIMDShift* curr);
+  void visitSIMDLoad(SIMDLoad* curr);
   void visitMemoryInit(MemoryInit* curr);
   void visitDataDrop(DataDrop* curr);
   void visitMemoryCopy(MemoryCopy* curr);
@@ -1054,6 +1055,36 @@ void FunctionValidator::visitSIMDShift(SIMDShift* curr) {
     curr->shift->type, i32, curr, "expected shift amount to have type i32");
 }
 
+void FunctionValidator::visitSIMDLoad(SIMDLoad* curr) {
+  shouldBeTrue(
+    getModule()->memory.exists, curr, "Memory operations require a memory");
+  shouldBeTrue(
+    getModule()->features.hasSIMD(), curr, "SIMD operation (SIMD is disabled)");
+  shouldBeEqualOrFirstIsUnreachable(
+    curr->type, v128, curr, "load_splat must have type v128");
+  shouldBeEqualOrFirstIsUnreachable(
+    curr->ptr->type, i32, curr, "load_splat address must have type i32");
+  Type memAlignType = none;
+  switch (curr->op) {
+    case LoadSplatVec8x16:
+    case LoadSplatVec16x8:
+    case LoadSplatVec32x4:
+      memAlignType = i32;
+      break;
+    case LoadSplatVec64x2:
+    case LoadExtSVec8x8ToVecI16x8:
+    case LoadExtUVec8x8ToVecI16x8:
+    case LoadExtSVec16x4ToVecI32x4:
+    case LoadExtUVec16x4ToVecI32x4:
+    case LoadExtSVec32x2ToVecI64x2:
+    case LoadExtUVec32x2ToVecI64x2:
+      memAlignType = i64;
+      break;
+  }
+  Index bytes = curr->getMemBytes();
+  validateAlignment(curr->align, memAlignType, bytes, /*isAtomic=*/false, curr);
+}
+
 void FunctionValidator::visitMemoryInit(MemoryInit* curr) {
   shouldBeTrue(getModule()->features.hasBulkMemory(),
                curr,
@@ -1300,6 +1331,7 @@ void FunctionValidator::visitBinary(Binary* curr) {
     case AndVec128:
     case OrVec128:
     case XorVec128:
+    case AndNotVec128:
     case AddVecI8x16:
     case AddSatSVecI8x16:
     case AddSatUVecI8x16:

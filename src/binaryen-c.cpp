@@ -349,6 +349,9 @@ BinaryenExpressionId BinaryenSIMDTernaryId(void) {
 BinaryenExpressionId BinaryenSIMDShiftId(void) {
   return Expression::Id::SIMDShiftId;
 }
+BinaryenExpressionId BinaryenSIMDLoadId(void) {
+  return Expression::Id::SIMDLoadId;
+}
 BinaryenExpressionId BinaryenMemoryInitId(void) {
   return Expression::Id::MemoryInitId;
 }
@@ -790,6 +793,7 @@ BinaryenOp BinaryenNotVec128(void) { return NotVec128; }
 BinaryenOp BinaryenAndVec128(void) { return AndVec128; }
 BinaryenOp BinaryenOrVec128(void) { return OrVec128; }
 BinaryenOp BinaryenXorVec128(void) { return XorVec128; }
+BinaryenOp BinaryenAndNotVec128(void) { return AndNotVec128; }
 BinaryenOp BinaryenBitselectVec128(void) { return Bitselect; }
 BinaryenOp BinaryenNegVecI8x16(void) { return NegVecI8x16; }
 BinaryenOp BinaryenAnyTrueVecI8x16(void) { return AnyTrueVecI8x16; }
@@ -879,6 +883,28 @@ BinaryenOp BinaryenConvertSVecI64x2ToVecF64x2(void) {
 }
 BinaryenOp BinaryenConvertUVecI64x2ToVecF64x2(void) {
   return ConvertUVecI64x2ToVecF64x2;
+}
+BinaryenOp BinaryenLoadSplatVec8x16(void) { return LoadSplatVec8x16; }
+BinaryenOp BinaryenLoadSplatVec16x8(void) { return LoadSplatVec16x8; }
+BinaryenOp BinaryenLoadSplatVec32x4(void) { return LoadSplatVec32x4; }
+BinaryenOp BinaryenLoadSplatVec64x2(void) { return LoadSplatVec64x2; }
+BinaryenOp BinaryenLoadExtSVec8x8ToVecI16x8(void) {
+  return LoadExtSVec8x8ToVecI16x8;
+}
+BinaryenOp BinaryenLoadExtUVec8x8ToVecI16x8(void) {
+  return LoadExtUVec8x8ToVecI16x8;
+}
+BinaryenOp BinaryenLoadExtSVec16x4ToVecI32x4(void) {
+  return LoadExtSVec16x4ToVecI32x4;
+}
+BinaryenOp BinaryenLoadExtUVec16x4ToVecI32x4(void) {
+  return LoadExtUVec16x4ToVecI32x4;
+}
+BinaryenOp BinaryenLoadExtSVec32x2ToVecI64x2(void) {
+  return LoadExtSVec32x2ToVecI64x2;
+}
+BinaryenOp BinaryenLoadExtUVec32x2ToVecI64x2(void) {
+  return LoadExtUVec32x2ToVecI64x2;
 }
 BinaryenOp BinaryenNarrowSVecI16x8ToVecI8x16(void) {
   return NarrowSVecI16x8ToVecI8x16;
@@ -1596,6 +1622,20 @@ BinaryenExpressionRef BinaryenSIMDShift(BinaryenModuleRef module,
       .makeSIMDShift(SIMDShiftOp(op), (Expression*)vec, (Expression*)shift);
   if (tracing) {
     traceExpression(ret, "BinaryenSIMDShift", op, vec, shift);
+  }
+  return static_cast<Expression*>(ret);
+}
+BinaryenExpressionRef BinaryenSIMDLoad(BinaryenModuleRef module,
+                                       BinaryenOp op,
+                                       uint32_t offset,
+                                       uint32_t align,
+                                       BinaryenExpressionRef ptr) {
+  auto* ret =
+    Builder(*(Module*)module)
+      .makeSIMDLoad(
+        SIMDLoadOp(op), Address(offset), Address(align), (Expression*)ptr);
+  if (tracing) {
+    traceExpression(ret, "BinaryenSIMDLoad", op, offset, align, ptr);
   }
   return static_cast<Expression*>(ret);
 }
@@ -2766,6 +2806,47 @@ BinaryenExpressionRef BinaryenSIMDShiftGetShift(BinaryenExpressionRef expr) {
   auto* expression = (Expression*)expr;
   assert(expression->is<SIMDShift>());
   return static_cast<SIMDShift*>(expression)->shift;
+}
+// SIMDLoad
+BinaryenOp BinaryenSIMDLoadGetOp(BinaryenExpressionRef expr) {
+  if (tracing) {
+    std::cout << "  BinaryenSIMDLoadGetOp(expressions[" << expressions[expr]
+              << "])\n";
+  }
+
+  auto* expression = (Expression*)expr;
+  assert(expression->is<SIMDLoad>());
+  return static_cast<SIMDLoad*>(expression)->op;
+}
+uint32_t BinaryenSIMDLoadGetOffset(BinaryenExpressionRef expr) {
+  if (tracing) {
+    std::cout << "  BinaryenSIMDLoadGetOffset(expressions[" << expressions[expr]
+              << "])\n";
+  }
+
+  auto* expression = (Expression*)expr;
+  assert(expression->is<SIMDLoad>());
+  return static_cast<SIMDLoad*>(expression)->offset;
+}
+uint32_t BinaryenSIMDLoadGetAlign(BinaryenExpressionRef expr) {
+  if (tracing) {
+    std::cout << "  BinaryenSIMDLoadGetAlign(expressions[" << expressions[expr]
+              << "])\n";
+  }
+
+  auto* expression = (Expression*)expr;
+  assert(expression->is<SIMDLoad>());
+  return static_cast<SIMDLoad*>(expression)->align;
+}
+BinaryenExpressionRef BinaryenSIMDLoadGetPtr(BinaryenExpressionRef expr) {
+  if (tracing) {
+    std::cout << "  BinaryenSIMDLoadGetPtr(expressions[" << expressions[expr]
+              << "])\n";
+  }
+
+  auto* expression = (Expression*)expr;
+  assert(expression->is<SIMDLoad>());
+  return static_cast<SIMDLoad*>(expression)->ptr;
 }
 // MemoryInit
 uint32_t BinaryenMemoryInitGetSegment(BinaryenExpressionRef expr) {

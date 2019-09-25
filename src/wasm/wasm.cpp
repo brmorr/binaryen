@@ -159,6 +159,8 @@ const char* getExpressionName(Expression* curr) {
       return "simd_ternary";
     case Expression::Id::SIMDShiftId:
       return "simd_shift";
+    case Expression::Id::SIMDLoadId:
+      return "simd_load";
     case Expression::Id::MemoryInitId:
       return "memory_init";
     case Expression::Id::DataDropId:
@@ -624,6 +626,34 @@ void SIMDShift::finalize() {
   if (vec->type == unreachable || shift->type == unreachable) {
     type = unreachable;
   }
+}
+
+void SIMDLoad::finalize() {
+  assert(ptr);
+  type = v128;
+  if (ptr->type == unreachable) {
+    type = unreachable;
+  }
+}
+
+Index SIMDLoad::getMemBytes() {
+  switch (op) {
+    case LoadSplatVec8x16:
+      return 1;
+    case LoadSplatVec16x8:
+      return 2;
+    case LoadSplatVec32x4:
+      return 4;
+    case LoadSplatVec64x2:
+    case LoadExtSVec8x8ToVecI16x8:
+    case LoadExtUVec8x8ToVecI16x8:
+    case LoadExtSVec16x4ToVecI32x4:
+    case LoadExtUVec16x4ToVecI32x4:
+    case LoadExtSVec32x2ToVecI64x2:
+    case LoadExtUVec32x2ToVecI64x2:
+      return 8;
+  }
+  WASM_UNREACHABLE();
 }
 
 Const* Const::set(Literal value_) {

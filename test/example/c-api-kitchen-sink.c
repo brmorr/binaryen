@@ -1,4 +1,3 @@
-
 // We always need asserts here
 #ifdef NDEBUG
 #undef NDEBUG
@@ -419,6 +418,7 @@ void test_core() {
     makeBinary(module, BinaryenAndVec128(), 5),
     makeBinary(module, BinaryenOrVec128(), 5),
     makeBinary(module, BinaryenXorVec128(), 5),
+    makeBinary(module, BinaryenAndNotVec128(), 5),
     makeBinary(module, BinaryenAddVecI8x16(), 5),
     makeBinary(module, BinaryenAddSatSVecI8x16(), 5),
     makeBinary(module, BinaryenAddSatUVecI8x16(), 5),
@@ -482,6 +482,39 @@ void test_core() {
     makeSIMDShift(module, BinaryenShlVecI64x2()),
     makeSIMDShift(module, BinaryenShrSVecI64x2()),
     makeSIMDShift(module, BinaryenShrUVecI64x2()),
+    // SIMD load
+    BinaryenSIMDLoad(
+      module, BinaryenLoadSplatVec8x16(), 0, 1, makeInt32(module, 128)),
+    BinaryenSIMDLoad(
+      module, BinaryenLoadSplatVec16x8(), 16, 1, makeInt32(module, 128)),
+    BinaryenSIMDLoad(
+      module, BinaryenLoadSplatVec32x4(), 16, 4, makeInt32(module, 128)),
+    BinaryenSIMDLoad(
+      module, BinaryenLoadSplatVec64x2(), 0, 4, makeInt32(module, 128)),
+    BinaryenSIMDLoad(
+      module, BinaryenLoadExtSVec8x8ToVecI16x8(), 0, 8, makeInt32(module, 128)),
+    BinaryenSIMDLoad(
+      module, BinaryenLoadExtUVec8x8ToVecI16x8(), 0, 8, makeInt32(module, 128)),
+    BinaryenSIMDLoad(module,
+                     BinaryenLoadExtSVec16x4ToVecI32x4(),
+                     0,
+                     8,
+                     makeInt32(module, 128)),
+    BinaryenSIMDLoad(module,
+                     BinaryenLoadExtUVec16x4ToVecI32x4(),
+                     0,
+                     8,
+                     makeInt32(module, 128)),
+    BinaryenSIMDLoad(module,
+                     BinaryenLoadExtSVec32x2ToVecI64x2(),
+                     0,
+                     8,
+                     makeInt32(module, 128)),
+    BinaryenSIMDLoad(module,
+                     BinaryenLoadExtUVec32x2ToVecI64x2(),
+                     0,
+                     8,
+                     makeInt32(module, 128)),
     // Other SIMD
     makeSIMDShuffle(module),
     makeSIMDTernary(module, BinaryenBitselectVec128()),

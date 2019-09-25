@@ -391,6 +391,48 @@ struct PrintExpressionContents
         break;
     }
   }
+  void visitSIMDLoad(SIMDLoad* curr) {
+    prepareColor(o);
+    switch (curr->op) {
+      case LoadSplatVec8x16:
+        o << "v8x16.load_splat";
+        break;
+      case LoadSplatVec16x8:
+        o << "v16x8.load_splat";
+        break;
+      case LoadSplatVec32x4:
+        o << "v32x4.load_splat";
+        break;
+      case LoadSplatVec64x2:
+        o << "v64x2.load_splat";
+        break;
+      case LoadExtSVec8x8ToVecI16x8:
+        o << "i16x8.load8x8_s";
+        break;
+      case LoadExtUVec8x8ToVecI16x8:
+        o << "i16x8.load8x8_u";
+        break;
+      case LoadExtSVec16x4ToVecI32x4:
+        o << "i32x4.load16x4_s";
+        break;
+      case LoadExtUVec16x4ToVecI32x4:
+        o << "i32x4.load16x4_u";
+        break;
+      case LoadExtSVec32x2ToVecI64x2:
+        o << "i64x2.load32x2_s";
+        break;
+      case LoadExtUVec32x2ToVecI64x2:
+        o << "i64x2.load32x2_u";
+        break;
+    }
+    restoreNormalColor(o);
+    if (curr->offset) {
+      o << " offset=" << curr->offset;
+    }
+    if (curr->align != curr->getMemBytes()) {
+      o << " align=" << curr->align;
+    }
+  }
   void visitMemoryInit(MemoryInit* curr) {
     prepareColor(o);
     o << "memory.init " << curr->segment;
@@ -1089,6 +1131,9 @@ struct PrintExpressionContents
       case XorVec128:
         o << "v128.xor";
         break;
+      case AndNotVec128:
+        o << "v128.andnot";
+        break;
 
       case AddVecI8x16:
         o << "i8x16.add";
@@ -1602,6 +1647,13 @@ struct PrintSExpression : public OverriddenVisitor<PrintSExpression> {
     incIndent();
     printFullLine(curr->vec);
     printFullLine(curr->shift);
+    decIndent();
+  }
+  void visitSIMDLoad(SIMDLoad* curr) {
+    o << '(';
+    PrintExpressionContents(currFunction, o).visit(curr);
+    incIndent();
+    printFullLine(curr->ptr);
     decIndent();
   }
   void visitMemoryInit(MemoryInit* curr) {

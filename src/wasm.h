@@ -353,6 +353,7 @@ enum BinaryOp {
   AndVec128,
   OrVec128,
   XorVec128,
+  AndNotVec128,
   AddVecI8x16,
   AddSatSVecI8x16,
   AddSatUVecI8x16,
@@ -433,6 +434,19 @@ enum SIMDShiftOp {
   ShrUVecI64x2
 };
 
+enum SIMDLoadOp {
+  LoadSplatVec8x16,
+  LoadSplatVec16x8,
+  LoadSplatVec32x4,
+  LoadSplatVec64x2,
+  LoadExtSVec8x8ToVecI16x8,
+  LoadExtUVec8x8ToVecI16x8,
+  LoadExtSVec16x4ToVecI32x4,
+  LoadExtUVec16x4ToVecI32x4,
+  LoadExtSVec32x2ToVecI64x2,
+  LoadExtUVec32x2ToVecI64x2
+};
+
 enum SIMDTernaryOp { Bitselect, QFMAF32x4, QFMSF32x4, QFMAF64x2, QFMSF64x2 };
 
 //
@@ -492,6 +506,7 @@ public:
     SIMDShuffleId,
     SIMDTernaryId,
     SIMDShiftId,
+    SIMDLoadId,
     MemoryInitId,
     DataDropId,
     MemoryCopyId,
@@ -874,6 +889,20 @@ public:
   Expression* vec;
   Expression* shift;
 
+  void finalize();
+};
+
+class SIMDLoad : public SpecificExpression<Expression::SIMDLoadId> {
+public:
+  SIMDLoad() = default;
+  SIMDLoad(MixedArena& allocator) {}
+
+  SIMDLoadOp op;
+  Address offset;
+  Address align;
+  Expression* ptr;
+
+  Index getMemBytes();
   void finalize();
 };
 

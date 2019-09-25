@@ -554,6 +554,44 @@ void BinaryInstWriter::visitSIMDShift(SIMDShift* curr) {
   }
 }
 
+void BinaryInstWriter::visitSIMDLoad(SIMDLoad* curr) {
+  o << int8_t(BinaryConsts::SIMDPrefix);
+  switch (curr->op) {
+    case LoadSplatVec8x16:
+      o << U32LEB(BinaryConsts::V8x16LoadSplat);
+      break;
+    case LoadSplatVec16x8:
+      o << U32LEB(BinaryConsts::V16x8LoadSplat);
+      break;
+    case LoadSplatVec32x4:
+      o << U32LEB(BinaryConsts::V32x4LoadSplat);
+      break;
+    case LoadSplatVec64x2:
+      o << U32LEB(BinaryConsts::V64x2LoadSplat);
+      break;
+    case LoadExtSVec8x8ToVecI16x8:
+      o << U32LEB(BinaryConsts::I16x8LoadExtSVec8x8);
+      break;
+    case LoadExtUVec8x8ToVecI16x8:
+      o << U32LEB(BinaryConsts::I16x8LoadExtUVec8x8);
+      break;
+    case LoadExtSVec16x4ToVecI32x4:
+      o << U32LEB(BinaryConsts::I32x4LoadExtSVec16x4);
+      break;
+    case LoadExtUVec16x4ToVecI32x4:
+      o << U32LEB(BinaryConsts::I32x4LoadExtUVec16x4);
+      break;
+    case LoadExtSVec32x2ToVecI64x2:
+      o << U32LEB(BinaryConsts::I64x2LoadExtSVec32x2);
+      break;
+    case LoadExtUVec32x2ToVecI64x2:
+      o << U32LEB(BinaryConsts::I64x2LoadExtUVec32x2);
+      break;
+  }
+  assert(curr->align);
+  emitMemoryAccess(curr->align, /*(unused) bytes=*/0, curr->offset);
+}
+
 void BinaryInstWriter::visitMemoryInit(MemoryInit* curr) {
   o << int8_t(BinaryConsts::MiscPrefix);
   o << U32LEB(BinaryConsts::MemoryInit);
@@ -1323,7 +1361,9 @@ void BinaryInstWriter::visitBinary(Binary* curr) {
     case XorVec128:
       o << int8_t(BinaryConsts::SIMDPrefix) << U32LEB(BinaryConsts::V128Xor);
       break;
-
+    case AndNotVec128:
+      o << int8_t(BinaryConsts::SIMDPrefix) << U32LEB(BinaryConsts::V128AndNot);
+      break;
     case AddVecI8x16:
       o << int8_t(BinaryConsts::SIMDPrefix) << U32LEB(BinaryConsts::I8x16Add);
       break;
