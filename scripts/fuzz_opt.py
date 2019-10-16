@@ -423,6 +423,8 @@ def test_one(random_input, opts):
                     commands = [in_bin('wasm-opt') + ' -all a.wasm'] + get_commands(opts)
                     write_commands(commands, 'tt.sh')
                     # reduce the input to something smaller with the same behavior on the script
+                    # wasm-reduce needs to find the binaries
+                    os.environ['BINARYEN_ROOT'] = options.binaryen_root
                     subprocess.check_call([in_bin('wasm-reduce'), 'input.wasm', '--command=bash tt.sh', '-t', 'a.wasm', '-w', 'reduced.wasm'])
                     print('Finished reduction. See "tt.sh" and "reduced.wasm".')
                     sys.exit(1)
